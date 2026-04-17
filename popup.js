@@ -118,10 +118,13 @@ pullStoredData(function() {
         chrome.tabs.create({'url': `${origin}/home`});
     }
 
-    isLoggedIn(function (loggedIn) {
+    getServerStatus(function (loggedIn, unauthorized, error) {
         if (!loggedIn) {
-            setErrorMessage(`You are not logged in, please go to the extension's option page`);
-            statusDiv.innerHTML = '';
+            const msg = unauthorized
+                ? `Invalid username or password — open the extension's options page`
+                : (error || `Cannot reach server — check the extension's options page`);
+            setErrorMessage(msg);
+            statusDiv.textContent = '';
             return;
         }
 

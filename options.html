@@ -41,6 +41,14 @@
         <input type="checkbox" class="form-check-input" id="useHTTPS">
         <label class="form-check-label ml-3" for="useHTTPS">Use HTTPS</label>
       </div>
+      <div class="form-group mt-3">
+        <label for="username">PyLoad username</label>
+        <input type="text" class="form-control" id="username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="password">PyLoad password</label>
+        <input type="password" class="form-control" id="password" autocomplete="current-password">
+      </div>
       <div class="form-group flex items-center justify-content-center mt-4">
         <label class="h5">Your PyLoad URL:</label>
         <div class="flex text-center mt-2">
@@ -49,10 +57,10 @@
       </div>
       <div class="d-flex justify-content-center">
         <div id="loginStatusOK" class="alert alert-success mt-2" hidden>
-          <i class="fa fa-check small mr-3"></i>You are logged in
+          <i class="fa fa-check small mr-3"></i>Connected
         </div>
         <div id="loginStatusKO" class="alert alert-danger mt-2" hidden>
-          <i class="fa fa-times small mr-3"></i>You are not logged in
+          <i class="fa fa-times small mr-3"></i>Not connected
         </div>
       </div>
     </form>
@@ -62,41 +70,6 @@
   <div class="d-flex justify-content-center">
     <div class="m-2">
       <button id="saveButton" class="btn btn-primary m-1">Save</button>
-      <button id="loginButton" class="btn btn-primary m-1" hidden>Login</button>
-    </div>
-  </div>
-
-
-  <div id="loginModal" class="modal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Login</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p>Login to PyLoad server is required, credentials will not be stored.</p>
-          <form>
-            <div class="form-group">
-              <label for="username">Username</label>
-              <input type="text" class="form-control" id="username">
-            </div>
-            <div class="form-group">
-              <label for="password">Password</label>
-              <input type="password" class="form-control" id="password">
-            </div>
-            <div class="d-flex justify-content-center">
-              <div id="alertDanger" class="alert alert-danger m-2" hidden></div>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-          <button id="loginButtonModal" type="button" class="btn btn-primary">Login</button>
-        </div>
-      </div>
     </div>
   </div>
 </body>

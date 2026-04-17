@@ -59,38 +59,38 @@ const sendToast = function(tab, type, message) {
     });
 }
 
-const downloadLink = function(info, tab) {
+const pyloadFetch = async function(path, body, signal) {
+    const headers = { 'Content-Type': 'application/json' };
+    const auth = authHeader();
+    if (auth) headers['Authorization'] = auth;
+    const response = await fetch(`${origin}${path}`, { method: 'POST', signal, headers, body: JSON.stringify(body) });
+    if (response.status === 401 || response.status === 403) {
+        throw new Error('Invalid username or password — check extension options');
+    }
+    if (!response.ok) {
+        throw new Error(`Server error (${response.status})`);
+    }
+    const json = await response.json();
+    if (json && json.hasOwnProperty('error')) {
+        throw new Error(json.error);
+    }
+    return json;
+}
+
+const downloadLink = async function(info, tab) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
-    fetch(`${origin}/api/statusServer`, { signal: controller.signal })
-        .then(response => response.json())
-        .then(json => {
-            clearTimeout(timeoutId);
-            if (json.hasOwnProperty('error')) {
-                if (json.error === 'Forbidden') sendToast(tab, 'error', `Invalid credentials, make sure you are logged in`);
-                else sendToast(tab, 'error', `Server unreachable`);
-                return;
-            }
-            fetch(`${origin}/api/checkURLs?urls=["${encodeURIComponent(info.linkUrl)}"]`)
-                .then(response => response.json())
-                .then(json => {
-                    if (json.hasOwnProperty('error')) {
-                        sendToast(tab, 'error', `Error checking url: ${json}`);
-                        return;
-                    }
-                    const safeName = encodeURIComponent(info.linkUrl.replace(/[^a-z0-9._\-]/gi, '_'));
-                    fetch(`${origin}/api/addPackage?name="${safeName}"&links=["${encodeURIComponent(info.linkUrl)}"]`)
-                        .then(response => response.json())
-                        .then(json => {
-                            if (json.hasOwnProperty('error')) {
-                                sendToast(tab, 'error', `Error requesting download: ${json}`);
-                                return;
-                            }
-                            sendToast(tab, 'success', 'Download added successfully');
-                        });
-                });
-        })
-        .catch(e => sendToast(tab, 'error', `Server unreachable`));
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    try {
+        await pyloadFetch('/api/check_urls', { urls: [info.linkUrl] }, controller.signal);
+        const safeName = info.linkUrl.replace(/[^a-z0-9._\-]/gi, '_');
+        await pyloadFetch('/api/add_package', { name: safeName, links: [info.linkUrl] }, controller.signal);
+        sendToast(tab, 'success', 'Download added successfully');
+    } catch (e) {
+        const msg = e.name === 'AbortError' ? 'Server unreachable' : (e.message || 'Server unreachable');
+        sendToast(tab, 'error', msg);
+    } finally {
+        clearTimeout(timeoutId);
+    }
 }
 
 chrome.runtime.onInstalled.addListener( () => {

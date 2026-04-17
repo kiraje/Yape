@@ -10,11 +10,6 @@ let loginStatusKODiv = document.getElementById('loginStatusKO');
 let currentURL = document.getElementById('currentURL');
 
 let saveButton = document.getElementById('saveButton');
-let loginButton = document.getElementById('loginButton');
-let loginButtonModal = document.getElementById('loginButtonModal');
-let alertDanger = document.getElementById('alertDanger');
-
-let loginModal = $('#loginModal');
 
 
 function enableSpinner() {
@@ -28,42 +23,34 @@ function disableSpinner() {
     spinnerDiv.innerHTML = ``;
 }
 
-function setDangerMessage(message, timeout=3000) {
-    if (!message) {
-        alertDanger.hidden = true;
-        return;
-    }
-    alertDanger.innerText = message;
-    alertDanger.hidden = false;
-    if (timeout > 0) {
-        setTimeout(function() {
-            alertDanger.hidden = true;
-            alertDanger.innerText = '';
-        }, timeout);
-    }
-}
-
 function getProtocol() {
     return useHTTPSInput.checked ? 'https' : 'http';
 }
+
+function setStatusMessage(div, iconClass, message) {
+    div.textContent = '';
+    const icon = document.createElement('i');
+    icon.className = `fa ${iconClass} small mr-3`;
+    div.appendChild(icon);
+    div.appendChild(document.createTextNode(message));
+}
+
+let pendingStatusXhr = null;
 
 function updateLoggedInStatus(callback) {
     saveButton.disabled = true;
     loginStatusOKDiv.hidden = true;
     loginStatusKODiv.hidden = true;
-    loginButton.hidden = true;
     enableSpinner();
-    isLoggedIn(function(loggedIn, unauthorized, error) {
+    pendingStatusXhr = getServerStatus(function(loggedIn, unauthorized, error) {
+        pendingStatusXhr = null;
         disableSpinner();
         loginStatusOKDiv.hidden = !loggedIn;
         loginStatusKODiv.hidden = loggedIn;
-        loginStatusKODiv.innerHTML = `<i class="fa fa-times small mr-3"></i>`
-        if (!loggedIn && unauthorized) {
-            loginStatusKODiv.innerHTML += `Please log in`;
-        } else {
-            loginStatusKODiv.innerHTML += error ? error : `You are not logged in`;
+        if (!loggedIn) {
+            const msg = unauthorized ? 'Invalid username or password' : (error || 'Not connected');
+            setStatusMessage(loginStatusKODiv, 'fa-times', msg);
         }
-        loginButton.hidden = !unauthorized;
         saveButton.disabled = false;
         if (callback) callback();
     });
@@ -96,85 +83,65 @@ function validHost(str) {
     return !!pattern.test(str);
 }
 
-function validateForm() {
-    // Host
-    const value = serverIpInput.value;
-    const isLocalhost = (value === 'localhost');
-    const isServerIPValid = validHost(value) || isLocalhost;
-    if (isServerIPValid) {
-        serverIpInput.classList.remove('is-invalid');
+function applyValidity(input, isValid) {
+    if (isValid) {
+        input.classList.remove('is-invalid');
     } else {
-        serverIpInput.classList.add('is-invalid');
-        saveButton.disabled = true;
-    }
-    // Port
-    const isValidPort = /\d+/.test(serverPortInput.value);
-    if (isValidPort) {
-        serverPortInput.classList.remove('is-invalid');
-    } else {
-        serverPortInput.classList.add('is-invalid');
-        saveButton.disabled = true;
-    }
-    // Path
-    const isValidPath = /^((\/[.\w-]+)*\/{0,1}|\/)$/.test(serverPathInput.value);
-    if (isValidPath) {
-        serverPathInput.classList.remove('is-invalid');
-    } else {
-        serverPathInput.classList.add('is-invalid');
+        input.classList.add('is-invalid');
         saveButton.disabled = true;
     }
 }
 
+function validateForm() {
+    const host = serverIpInput.value;
+    applyValidity(serverIpInput, validHost(host) || host === 'localhost');
+    applyValidity(serverPortInput, /\d+/.test(serverPortInput.value));
+    applyValidity(serverPathInput, /^((\/[.\w-]+)*\/{0,1}|\/)$/.test(serverPathInput.value));
+}
+
 function requireSaving() {
     updateCurrentURL();
-    if (xhr !== null) {
-        xhr.abort();
+    if (pendingStatusXhr !== null) {
+        pendingStatusXhr.abort();
+        pendingStatusXhr = null;
     }
     if (serverIpInput.value === serverIp &&
         parseInt(serverPortInput.value) === parseInt(serverPort) &&
         useHTTPSInput.checked === (serverProtocol === 'https') &&
-        serverPathInput.value === serverPath) {
+        serverPathInput.value === serverPath &&
+        usernameInput.value === username &&
+        passwordInput.value === password) {
         updateLoggedInStatus();
     } else {
         saveButton.disabled = false;
         loginStatusOKDiv.hidden = true;
         loginStatusKODiv.hidden = true;
-        loginButton.hidden = true;
     }
     validateForm();
 }
 
 function updateCurrentURL() {
-    portString = `:${serverPortInput.value}`;
-    if ((useHTTPSInput.checked && serverPortInput.value === '443') || (!useHTTPSInput.checked && serverPortInput.value === '80')) {
-        portString = '';
-    }
-    currentURL.innerHTML = `${useHTTPSInput.checked ? 'https' : 'http'}://${serverIpInput.value}${portString}${serverPathInput.value}`;
+    const protocol = useHTTPSInput.checked ? 'https' : 'http';
+    const port = serverPortInput.value;
+    const isDefaultPort = (useHTTPSInput.checked && port === '443') || (!useHTTPSInput.checked && port === '80');
+    const portString = isDefaultPort ? '' : `:${port}`;
+    currentURL.textContent = `${protocol}://${serverIpInput.value}${portString}${serverPathInput.value}`;
 }
 
 saveButton.onclick = function(ev) {
-    setOrigin(serverIpInput.value, serverPortInput.value, getProtocol(), serverPathInput.value, function() {
+    setOrigin({
+        ip: serverIpInput.value,
+        port: serverPortInput.value,
+        protocol: getProtocol(),
+        path: serverPathInput.value,
+        username: usernameInput.value,
+        password: passwordInput.value
+    }, function() {
         requestPermission(function(granted) {
             updateLoggedInStatus();
         });
     });
 };
-
-loginButton.onclick = function(ev) {
-    loginModal.modal('show');
-}
-
-loginButtonModal.onclick = function(ev) {
-    setDangerMessage('');
-    login(usernameInput.value, passwordInput.value, function(success, error_msg) {
-        if (success) {
-            loginModal.modal('hide');
-            updateLoggedInStatus();
-        } else {
-            setDangerMessage(error_msg, 0);
-        }
-    });
-}
 
 $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip();
@@ -185,6 +152,8 @@ pullStoredData(function() {
     serverPortInput.value = serverPort;
     serverPathInput.value = serverPath;
     useHTTPSInput.checked = serverProtocol === 'https';
+    usernameInput.value = username;
+    passwordInput.value = password;
 
     updateCurrentURL();
 
@@ -192,6 +161,8 @@ pullStoredData(function() {
     serverPortInput.oninput = requireSaving;
     useHTTPSInput.oninput = requireSaving;
     serverPathInput.oninput = requireSaving;
+    usernameInput.oninput = requireSaving;
+    passwordInput.oninput = requireSaving;
 
     updateLoggedInStatus();
 });

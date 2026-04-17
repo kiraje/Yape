@@ -1,42 +1,40 @@
-let serverPort, serverIp, serverProtocol, serverPath, origin;
+let serverPort, serverIp, serverProtocol, serverPath, origin, username, password;
 
+const STORAGE_KEYS = ['serverIp', 'serverPort', 'serverPath', 'serverProtocol', 'username', 'password'];
+
+function authHeader() {
+    return username ? `Basic ${btoa(`${username}:${password}`)}` : null;
+}
+
+function buildOrigin() {
+    let url = `${serverProtocol}://${serverIp}:${serverPort}${serverPath}`;
+    if (url.endsWith('/')) url = url.slice(0, -1);
+    return url;
+}
 
 function pullStoredData(callback) {
-    chrome.storage.sync.get(['serverIp', 'serverPort', 'serverPath', 'serverProtocol'], function(data) {
+    chrome.storage.sync.get(STORAGE_KEYS, function(data) {
         serverIp = data.serverIp || '172.0.0.1';
         serverPort = data.serverPort || 8001;
         serverPath = data.serverPath || '/';
         serverProtocol = data.serverProtocol || 'http';
-        origin = `${serverProtocol}://${serverIp}:${serverPort}${serverPath}`;
-        if (origin.endsWith('/')) {
-            origin = origin.slice(0, origin.length - 1);
-        }
+        username = data.username || '';
+        password = data.password || '';
+        origin = buildOrigin();
         if (callback) callback(data);
     });
 }
 
-function isLoggedIn(callback) {
-    getServerStatus(function(success, unauthorized, error, response) {
-        if (callback) {
-            callback(success, unauthorized, error, response);
-        }
-    });
-}
-
-function setOrigin(ip, port, protocol, path, callback) {
-    serverIp = ip;
-    serverPort = port;
-    serverProtocol = protocol;
-    serverPath = path;
-    origin = `${serverProtocol}://${serverIp}:${serverPort}${serverPath}`;
-    if (origin.endsWith('/')) {
-        origin = origin.slice(0, origin.length - 1);
-    }
+function setOrigin(config, callback) {
+    serverIp = config.ip;
+    serverPort = config.port;
+    serverProtocol = config.protocol;
+    serverPath = config.path;
+    username = config.username;
+    password = config.password;
+    origin = buildOrigin();
     chrome.storage.sync.set({
-        serverIp: serverIp,
-        serverPort: serverPort,
-        serverProtocol: serverProtocol,
-        serverPath: serverPath
+        serverIp, serverPort, serverProtocol, serverPath, username, password
     }, function () {
         if (callback) callback();
     });
