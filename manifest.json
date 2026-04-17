@@ -1,7 +1,7 @@
 {
-  "name": "Yape",
-  "version": "1.1.2",
-  "description": "Extension for PyLoad to easily monitor and add downloads",
+  "name": "Tape",
+  "version": "2.0.0",
+  "description": "Tape — the new Yape. Browser extension for pyload-ng: monitor and add downloads.",
   "permissions": ["activeTab", "storage", "contextMenus", "scripting"],
   "host_permissions": ["http://*/", "https://*/"],
   "action": {

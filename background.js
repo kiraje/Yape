@@ -3,7 +3,7 @@ importScripts('js/storage.js');
 const notify = function(title, message) {
     return chrome.notifications.create('', {
         type: 'basic',
-        title: title || 'Yape',
+        title: title || 'Tape',
         message: message || '',
         iconUrl: './images/icon.png',
     });
@@ -95,8 +95,8 @@ const downloadLink = async function(info, tab) {
 
 chrome.runtime.onInstalled.addListener( () => {
     chrome.contextMenus.create({
-        id: 'yape',
-        title: 'Download with Yape',
+        id: 'tape',
+        title: 'Download with Tape',
         contexts:['link']
     });
 });
@@ -108,7 +108,7 @@ chrome.runtime.onMessage.addListener( data => {
 });
 
 chrome.contextMenus.onClicked.addListener( ( info, tab ) => {
-    if ('yape' === info.menuItemId) {
+    if ('tape' === info.menuItemId) {
         loadToastr(tab, function() {
             pullStoredData(function() {
                 sendToast(tab, 'info', 'Requesting download...');

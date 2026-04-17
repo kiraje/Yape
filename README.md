@@ -1,46 +1,48 @@
-# Yape - Browser extension for PyLoad
+# Tape — Browser extension for pyload-ng
 
-[![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/lbbofcfllogcmffofacfoiolglncdcgb.svg?style=flat-square)](https://chrome.google.com/webstore/detail/yape/lbbofcfllogcmffofacfoiolglncdcgb)
-[![Chrome Web Store Downloads](https://img.shields.io/chrome-web-store/d/lbbofcfllogcmffofacfoiolglncdcgb.svg?style=flat-square)](https://chrome.google.com/webstore/detail/yape/lbbofcfllogcmffofacfoiolglncdcgb/reviews)
-[![Chrome Web Store Rating](https://img.shields.io/chrome-web-store/stars/lbbofcfllogcmffofacfoiolglncdcgb.svg?style=flat-square)](https://chrome.google.com/webstore/detail/yape/lbbofcfllogcmffofacfoiolglncdcgb/reviews)
+**The new Yape.** A maintained fork of [RemiRigal/Yape](https://github.com/RemiRigal/Yape), rewritten for the modern [pyload-ng](https://github.com/pyload/pyload) API (v1.1.0+).
 
-[![Firefox Web Store Version](https://img.shields.io/amo/v/remi.rigal@ensta-bretagne.org.svg?style=flat-square&label=firefox%20add-on)](https://addons.mozilla.org/firefox/addon/yape/)
-[![Firefox Web Store Downloads](https://img.shields.io/amo/users/remi.rigal@ensta-bretagne.org.svg?style=flat-square)](https://addons.mozilla.org/firefox/addon/yape/)
-[![Firefox Web Store Rating](https://img.shields.io/amo/stars/remi.rigal@ensta-bretagne.org.svg?style=flat-square&label=ratings)](https://addons.mozilla.org/firefox/addon/yape/)
+The upstream project is no longer actively maintained, and the old API contract it was built against (camelCase endpoints, session-cookie login via `/api/login`) no longer exists in pyload-ng 1.x. Tape restores the extension against the current API: HTTP Basic Auth, snake_case endpoints, JSON bodies.
 
+## Features
 
-
-Yape stands for **Yet Another PyLoad Extension**. It's a dead simple browser extension for monitoring and easily adding downloads to a [PyLoad](https://github.com/pyload/pyload) server.
-
-Features:
-- One-click download
-- Monitor current downloads
-- Monitor global bandwidth usage & one-click speed limiter
-- Context menu downloads
-
+- One-click download of the current tab
+- Monitor active downloads with speed and ETA
+- Monitor global bandwidth usage with a one-click speed limiter
+- Context-menu "Download with Tape" on any link
+- Works with pyload-ng `0.5.x` (API `1.1.0`)
 
 ## Install
 
-**[Available on the Chrome Web Store](https://chrome.google.com/webstore/detail/yape/lbbofcfllogcmffofacfoiolglncdcgb)**  
-**[Available on Firefox Add-ons](https://addons.mozilla.org/firefox/addon/yape/)**
+Load the extension unpacked (the Chrome Web Store / Firefox Add-ons listings for the original Yape are not updated with this fork):
 
+1. Clone or download this repo.
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the repo folder.
 
 ## Usage
 
-Go to the option page by clicking on the `settings` icon and fill the IP address and the port of the `PyLoad` server. Click `Save` and then `Login` to enter your credentials.
+1. Click the extension icon → **Options**.
+2. Fill in your pyload server:
+   - **Host** — e.g. `192.168.1.10`
+   - **Port** — e.g. `8000`
+   - **Path** — usually `/`
+   - **Use HTTPS** — if your server has TLS
+   - **Username** / **Password** — your pyload account credentials
+3. Click **Save**. The page shows a green "Connected" alert when it can talk to the server.
 
-> Note: The credentials are not stored on the browser, only the session cookie.  
+Credentials are stored in `chrome.storage.sync` and sent as HTTP Basic Auth on every request.
 
-The current downloads are always displayed.
-If the current active tab has a downloadable file, an extra panel will be displayed with a button to start the download.
-A download can also be added by right-clicking on a link and selecting `Download with Yape`.
+The extension popup shows active downloads. If the current tab points to a pyload-supported download, an extra panel appears with a download button. You can also right-click any link and choose **Download with Tape**.
 
+## What changed from Yape
 
-## Screenshot
-
-![Screenshot](images/screenshot.jpg)
-
+- **Auth:** session cookie via `POST /api/login` → HTTP Basic Auth (`Authorization: Basic ...`). The `/api/login` endpoint was removed in pyload-ng 1.x.
+- **Endpoints:** camelCase (`/api/statusServer`) → snake_case (`/api/status_server`).
+- **Verbs:** everything-is-POST → RESTful (GET for reads, POST for mutations).
+- **Request bodies:** form-encoded → JSON.
+- **UI:** the login modal is gone; credentials live in the options page.
 
 ## License
 
-Yape is licensed under the [MIT License](https://github.com/RemiRigal/Yape/blob/master/LICENSE).
+MIT. Original Yape by Rémi Rigal — see [LICENSE](LICENSE).
